@@ -299,10 +299,14 @@ def classify(row, market_list):
         판매처 = str(row.get('판매처', '')).strip()
         if 판매처 == "*쿠팡(쉽먼트)_미오":
             return "로켓"
+        elif 판매처.strip() == "2.쿠팡(쉽먼트)_미오":
+            return "로켓"
         elif 판매처상품명 in market_list:
             return "마켓"
         elif '온누리인터' in 판매처옵션명:
             return "인터"
+        elif '로켓그로스' in 판매처옵션명:
+            return "로켓"
         elif '큐텐' in 판매처옵션명:
             return "큐텐"
         elif '고알레' in 판매처상품명:
