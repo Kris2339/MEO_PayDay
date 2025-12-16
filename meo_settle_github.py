@@ -259,6 +259,7 @@ def classify(row, market_list):
     구분 = str(row.get('구분', '')).strip()
     비고 = str(row.get('비고', ''))
 
+    # 비고 우선 체크
     if "밀크런" in 비고:
         return "로켓"
     if "로켓그로스" in 비고:
@@ -267,15 +268,23 @@ def classify(row, market_list):
         return "로켓"
     if "스타배송" in 비고:
         return "로켓"
-    if "올리브영" in 비고:
-        return "올리브영"
     if "컬리" in 비고:
-        return "일반"
+        return "로켓"
+    if "올리브영" in 비고:
+        return "B2B"
+    if "신라면세점" in 비고:
+        return "B2B"
+    if "큐텐" in 비고:
+        return "B2B"
+    if "수출" in 비고:
+        return "B2B"
+
     if 구분 == "(-)조정":
         if "세트" in 비고:
             return "세트용 출고"
         else:
             return "출고조정"
+
     if 구분 == "(+)조정":
         if "세트" in 비고:
             return "세트용 입고"
@@ -283,44 +292,68 @@ def classify(row, market_list):
             return "가구매 입고"
         else:
             return "입고조정"
+
     if 구분 == "정상입고":
         if "세트" in 비고:
             return "세트용 입고"
         else:
             return "정상입고"
+
     if 구분 == "반품입고":
         return "반품입고"
+
     if 구분 == "정상출고":
-        출고방식 = str(row.get('출고방식', '')).strip()
-        if 출고방식 == "" and "세트" in 비고:
-            return "세트용 출고"
+        판매처 = str(row.get('판매처', '')).strip()
         판매처상품명 = str(row.get('판매처상품명', '')).strip()
         판매처옵션명 = str(row.get('판매처옵션명', ''))
-        판매처 = str(row.get('판매처', '')).strip()
-        if 판매처 == "*쿠팡(쉽먼트)_미오":
-            return "로켓"
-        elif 판매처.strip() == "2.쿠팡(쉽먼트)_미오":
-            return "로켓"
-        elif 판매처상품명 in market_list:
-            return "마켓"
-        elif '온누리인터' in 판매처옵션명:
-            return "인터"
-        elif '로켓그로스' in 판매처옵션명:
-            return "로켓"
-        elif '큐텐' in 판매처옵션명:
-            return "큐텐"
-        elif '고알레' in 판매처상품명:
-            return "고알레"
-        elif any(x in 판매처옵션명 for x in ['마케팅', '시딩', '개인구매','사은품']):
-            return "마케팅"
-        elif '제품 불량 재발송' in 판매처옵션명:
-            return "불량"
-        elif '수기발주' in 판매처:
+
+        # 1. 수기발주 (최우선)
+        if "수기발주" in 판매처:
             return "수기"
-        elif (판매처 == '아임웹_미오' and '전화구매' not in 판매처옵션명) or (판매처 == ''):
-            return "미분류"
-        else:
+
+        # 2. 마케팅 (판매처옵션명)
+        if any(x in 판매처옵션명 for x in ['마케팅', '시딩', '개인구매', '사은품']):
+            return "마케팅"
+
+        # 3. 쿠팡 로켓 (판매처 직접 체크)
+        if "*쿠팡(쉽먼트)" in 판매처 or "2.쿠팡(쉽먼트)" in 판매처:
+            return "로켓"
+
+        # 4. 마켓 상품명 리스트
+        if 판매처상품명 in market_list:
+            return "마켓"
+
+        # 5. 로켓 (판매처옵션명 또는 비고)
+        if any(keyword in 판매처옵션명 for keyword in ['밀크런', '로켓그로스', '파스토', '스타배송', '컬리']):
+            return "로켓"
+
+        # 6. B2B (판매처옵션명)
+        if any(keyword in 판매처옵션명 for keyword in ['올리브영', '신라면세점', '큐텐', '수출']):
+            return "B2B"
+
+        # 7. 일반 (판매처옵션명)
+        if "일반" in 판매처옵션명:
             return "일반"
+
+        # 8. 인터 (판매처옵션명)
+        if "인터" in 판매처옵션명:
+            return "인터"
+
+        # 9. 고알레 (판매처상품명 또는 판매처옵션명)
+        if "고알레" in 판매처상품명 or "고알레" in 판매처옵션명:
+            return "고알레"
+
+        # 10. 불량 재발송 (판매처옵션명)
+        if '제품 불량 재발송' in 판매처옵션명:
+            return "불량"
+
+        # 11. 미분류 조건
+        if (판매처 == '아임웹_미오' and '전화구매' not in 판매처옵션명) or 판매처 == '':
+            return "미분류"
+
+        # 12. 기본값
+        return "일반"
+
     return 구분
 
 # --- 6. 업로드된 파일들 처리 ---
